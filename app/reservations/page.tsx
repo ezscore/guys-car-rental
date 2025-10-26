@@ -68,6 +68,10 @@ function ReservationForm() {
     setIsSubmitting(true);
     setSubmitError(null);
 
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
     try {
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -75,8 +79,10 @@ function ReservationForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (data.success) {
@@ -88,8 +94,14 @@ function ReservationForm() {
         setSubmitError(data.error || 'Failed to create reservation. Please try again.');
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Reservation submission error:', error);
-      setSubmitError('Network error. Please check your connection and try again.');
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        setSubmitError('Request timed out after 60 seconds. The server may be busy. Please try again.');
+      } else {
+        setSubmitError('Network error. Please check your connection and try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

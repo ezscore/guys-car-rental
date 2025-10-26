@@ -2,20 +2,18 @@
 // This maps your internal IDs to HQ Rental's system IDs
 
 export const VEHICLE_CLASS_MAPPING: Record<string, string> = {
-  // NOTE: HQ Rental currently only has one vehicle type (ID: 1 - "Car")
-  // All vehicle groups are mapped to this type. You can create specific vehicle
-  // classes in your HQ Rental dashboard and update these mappings later.
-  'ECAR': '1', // Economy Car (4 Dr)
-  'CCAR': '1', // Compact Car
-  'ICAR': '1', // Midsize Car
-  'SCAR': '1', // Fullsize Car
-  'SFAR': '1', // Midsize Jeep
-  'RFAR': '1', // Luxury Jeep
-  'FGAR': '1', // Pickup Truck
-  'FFAR': '1', // Large SUV
-  'GFAR': '1', // Luxury Large SUV
-  'MVAN': '1', // Minivan (Audi)
-  'LCAR': '1', // Luxury Cars (e.g BMW)
+  // Mapped to actual HQ Rental vehicle class IDs based on SIPP codes and vehicle types
+  'ECAR': '3', // Economy Car (4 Dr) → Compact SUV (CGAR)
+  'CCAR': '3', // Compact Car → Compact SUV (CGAR)
+  'ICAR': '5', // Midsize Car → Intermediate Sedan (IDAR)
+  'SCAR': '4', // Fullsize Car → Full-size Special SUV (FCAR)
+  'SFAR': '2', // Midsize Jeep → Standard SUV (SFAR)
+  'RFAR': '1', // Luxury Jeep → Premium SUV (PFAR)
+  'FGAR': '6', // Pickup Truck → Intermediate SUV (IGAR)
+  'FFAR': '1', // Large SUV → Premium SUV (PFAR)
+  'GFAR': '1', // Luxury Large SUV → Premium SUV (PFAR)
+  'MVAN': '7', // Minivan (Audi) → Multi-Purpose Vehicle
+  'LCAR': '1', // Luxury Cars (e.g BMW) → Premium SUV (PFAR)
 };
 
 export const LOCATION_MAPPING: Record<string, string> = {

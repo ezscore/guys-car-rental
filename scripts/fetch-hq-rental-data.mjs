@@ -102,6 +102,23 @@ async function main() {
     console.error('Error:', error.message);
   }
 
+  // Fetch Vehicles
+  console.log('\n\n🚗 VEHICLES IN FLEET:');
+  console.log('-'.repeat(80));
+  try {
+    const response = await fetchData('fleets/vehicles');
+    const vehicles = response.fleets_vehicles || [];
+    if (vehicles.length > 0) {
+      vehicles.forEach(v => {
+        console.log(`ID: ${v.id} | License: ${v.license_plate} | Type: ${v.vehicle_type_id} | Status: ${v.status}`);
+      });
+    } else {
+      console.log('No vehicles found');
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+
   console.log('\n' + '='.repeat(80));
   console.log('\n✅ Done! Use these IDs to update config/hq-rental-mapping.ts');
 }

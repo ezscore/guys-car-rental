@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type {
-  FrontendReservationData,
-  HQRentalReservationRequest,
-  HQRentalAPIResponse,
-  HQRentalReservation
-} from '@/types/hq-rental';
+import type { FrontendReservationData } from '@/types/hq-rental';
 import {
   getVehicleClassId,
   getLocationId,
@@ -37,31 +32,56 @@ const getHQRentalConfig = () => {
   return { baseUrl, authToken, brandId };
 };
 
+// Generic API call helper with timeout
 const callHQRentalAPI = async (
   endpoint: string,
-  payload: HQRentalReservationRequest
-): Promise<HQRentalAPIResponse<HQRentalReservation>> => {
+  method: 'GET' | 'POST' = 'POST',
+  payload?: Record<string, any>,
+  timeoutMs: number = 30000 // 30 second timeout
+): Promise<any> => {
   const { baseUrl, authToken } = getHQRentalConfig();
 
   try {
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'POST',
+    const url = new URL(`${baseUrl}${endpoint}`);
+
+    // For GET requests, add payload as query params
+    if (method === 'GET' && payload) {
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+
+    const options: RequestInit = {
+      method,
       headers: {
         'Authorization': `Basic ${authToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload)
+      }
+    };
+
+    // For POST requests, add payload as body
+    if (method === 'POST' && payload) {
+      options.body = JSON.stringify(payload);
+    }
+
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Request to ${endpoint} timed out after ${timeoutMs}ms`)), timeoutMs);
     });
+
+    // Race between fetch and timeout
+    const response = await Promise.race([
+      fetch(url.toString(), options),
+      timeoutPromise
+    ]) as Response;
 
     const data = await response.json();
 
-    // HQ Rental API returns a wrapper with success, status_code, errors, and data
     if (data.success) {
-      return {
-        success: true,
-        data: data.data
-      };
+      return { success: true, data: data.data };
     } else {
       return {
         success: false,
@@ -70,10 +90,11 @@ const callHQRentalAPI = async (
       };
     }
   } catch (error) {
-    console.error('HQ Rental API Error:', error);
+    console.error(`HQ Rental API Error [${endpoint}]:`, error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      endpoint
     };
   }
 };
@@ -91,74 +112,187 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Map frontend data to HQ Rental API format
-    let payload: HQRentalReservationRequest;
+    // Map locations and vehicle class
+    const pickupLocationId = getLocationId(formData.pickupLocation);
+    const returnLocationId = getLocationId(formData.pickupLocation); // Same as pickup for now
+    const vehicleClassId = getVehicleClassId(formData.vehicleGroup);
 
-    try {
-      payload = {
-        brand_id: brandId,
+    // ============================================
+    // STEP 1 & 2: Validate Dates and Get Available Vehicle Classes
+    // ============================================
+    console.log('Step 1-2: Validating dates and checking vehicle availability...');
 
-        // Dates & Times
-        pick_up_date: formData.pickupDate,
-        return_date: formData.returnDate,
-        pick_up_time: formData.pickupTime,
-        return_time: formData.returnTime,
+    const datesValidation = await callHQRentalAPI('car-rental/reservations/dates', 'POST', {
+      brand_id: brandId,
+      pick_up_date: formData.pickupDate,
+      pick_up_time: formData.pickupTime,
+      return_date: formData.returnDate,
+      return_time: formData.returnTime,
+      pick_up_location: pickupLocationId,
+      return_location: returnLocationId
+    });
 
-        // Vehicle & Location (with mapping)
-        vehicle_class_id: getVehicleClassId(formData.vehicleGroup),
-        pick_up_location: getLocationId(formData.pickupLocation),
-        return_location: getLocationId(formData.pickupLocation), // Same as pickup for now
-
-        // Customer Information
-        customer_first_name: formData.firstName,
-        customer_last_name: formData.lastName,
-        customer_email: formData.email,
-        customer_phone_number: formData.phone,
-        customer_birthdate: formData.birthdate,
-        customer_driver_license_number: formData.driversLicense,
-        customer_driver_license_expiration_date: formData.licenseExpiration,
-
-        // Address
-        customer_street: formData.street,
-        customer_city: formData.city,
-        customer_state: formData.state,
-        customer_zip: formData.zip,
-        customer_country: formData.country,
-
-        // Enhancements
-        additional_charges: getEnhancementIds(formData.selectedEnhancements),
-
-        // Default settings
-        currency: 'USD',
-        skip_confirmation_email: false,
-        walk_in_customer: false
-      };
-    } catch (mappingError) {
+    if (!datesValidation.success) {
+      console.error('STEP 1-2 FAILED - Dates validation:', datesValidation.error);
       return NextResponse.json(
         {
           success: false,
-          error: mappingError instanceof Error ? mappingError.message : 'Mapping error occurred'
+          error: `Step 1-2 Failed: ${datesValidation.error || 'Invalid dates or location'}`,
+          step: 'dates_validation'
         },
         { status: 400 }
       );
     }
 
-    // Call HQ Rental API
-    const result = await callHQRentalAPI('car-rental/reservations/confirm', payload);
+    // Debug: Log the full response
+    console.log('Dates validation response:', JSON.stringify(datesValidation.data, null, 2));
 
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        reservation: result.data,
-        message: 'Reservation created successfully!'
-      });
-    } else {
+    // Check if selected vehicle class is available
+    const availableClasses = datesValidation.data?.applicable_classes || [];
+    console.log('Available vehicle classes:', availableClasses);
+    console.log('Looking for vehicle class ID:', vehicleClassId);
+
+    const selectedClass = availableClasses.find((c: any) => String(c.vehicle_class_id) === vehicleClassId);
+    console.log('Selected class found:', selectedClass ? 'YES' : 'NO');
+
+    if (!selectedClass) {
+      console.error('Vehicle class not available. Available IDs:', availableClasses.map((c: any) => c.vehicle_class_id));
       return NextResponse.json(
         {
           success: false,
-          error: result.error || 'Failed to create reservation'
+          error: 'The selected vehicle class is not available for these dates. Please try different dates or a different vehicle.'
         },
-        { status: result.status_code || 500 }
+        { status: 400 }
+      );
+    }
+
+    // ============================================
+    // STEP 3 & 4: Get Additional Charges and Calculate Price
+    // ============================================
+    console.log('Step 3-4: Getting additional charges and calculating price...');
+
+    const additionalChargesIds = getEnhancementIds(formData.selectedEnhancements);
+
+    const priceCalculation = await callHQRentalAPI('car-rental/reservations/additional-charges', 'POST', {
+      brand_id: brandId,
+      pick_up_date: formData.pickupDate,
+      pick_up_time: formData.pickupTime,
+      return_date: formData.returnDate,
+      return_time: formData.returnTime,
+      pick_up_location: pickupLocationId,
+      return_location: returnLocationId,
+      vehicle_class_id: vehicleClassId,
+      additional_charges: additionalChargesIds
+    });
+
+    if (!priceCalculation.success) {
+      console.warn('Price calculation warning:', priceCalculation.error);
+      // Continue anyway - price calculation is informational
+    }
+
+    // ============================================
+    // STEP 5 & 6: Create Customer
+    // ============================================
+    console.log('Step 5-6: Creating customer...');
+
+    const customerPayload = {
+      brand_id: brandId,
+      pick_up_date: formData.pickupDate,
+      pick_up_time: formData.pickupTime,
+      return_date: formData.returnDate,
+      return_time: formData.returnTime,
+      pick_up_location: pickupLocationId,
+      return_location: returnLocationId,
+      vehicle_class_id: vehicleClassId,
+      contact_entity: 'person',
+      field_2: formData.firstName,       // First Name
+      field_3: formData.lastName,        // Last Name
+      field_9: formData.email,           // Email
+      field_8: formData.phone,           // Phone Number
+      field_15: formData.birthdate,      // Birthdate
+      field_254: formData.driversLicense, // Driver License Number
+      field_256: formData.licenseExpiration, // License Expiration
+      field_193: formData.street,        // Street Address
+      field_194: '',                     // Street Address 2 (optional)
+      field_195: formData.city,          // City
+      field_196: formData.state,         // State
+      field_198: formData.zip,           // Zip Code
+      field_62: formData.country,        // Country (ISO code)
+      field_273: '',                     // Nationality (optional)
+      field_274: '',                     // Passport (optional)
+      field_6: ''                        // Website (optional)
+    };
+
+    const customerResult = await callHQRentalAPI('car-rental/reservations/customer', 'POST', customerPayload);
+
+    if (!customerResult.success) {
+      console.error('STEP 5-6 FAILED - Customer creation:', customerResult.error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Step 5-6 Failed: ${customerResult.error || 'Failed to create customer'}`,
+          step: 'customer_creation',
+          details: 'This may be caused by duplicate customer email or invalid data'
+        },
+        { status: 400 }
+      );
+    }
+
+    const customerId = customerResult.data?.customer?.id;
+    if (!customerId) {
+      console.error('STEP 5-6 FAILED - Customer ID not returned');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Step 5-6 Failed: Customer created but ID not returned',
+          step: 'customer_creation'
+        },
+        { status: 500 }
+      );
+    }
+
+    // ============================================
+    // STEP 7: Upload Driver License (Skip for now - can add later)
+    // ============================================
+    console.log('Step 7: Skipping driver license upload (optional)');
+
+    // ============================================
+    // STEP 8: Confirm Reservation
+    // ============================================
+    console.log('Step 8: Confirming reservation...');
+
+    const confirmationPayload = {
+      customer_id: customerId,
+      brand_id: brandId,
+      pick_up_date: formData.pickupDate,
+      pick_up_time: formData.pickupTime,
+      return_date: formData.returnDate,
+      return_time: formData.returnTime,
+      vehicle_class_id: vehicleClassId,
+      pick_up_location: pickupLocationId,
+      return_location: returnLocationId,
+      additional_charges: additionalChargesIds
+    };
+
+    const reservationResult = await callHQRentalAPI('car-rental/reservations/confirm', 'POST', confirmationPayload);
+
+    if (reservationResult.success) {
+      console.log('✓ STEP 8 SUCCESS - Reservation created successfully!');
+      console.log('Reservation data:', JSON.stringify(reservationResult.data, null, 2));
+      return NextResponse.json({
+        success: true,
+        reservation: reservationResult.data,
+        message: 'Reservation created successfully!'
+      });
+    } else {
+      console.error('STEP 8 FAILED - Reservation confirmation:', reservationResult.error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Step 8 Failed: ${reservationResult.error || 'Failed to create reservation'}`,
+          step: 'reservation_confirmation'
+        },
+        { status: reservationResult.status_code || 500 }
       );
     }
 
@@ -167,7 +301,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error'
       },
       { status: 500 }
     );
