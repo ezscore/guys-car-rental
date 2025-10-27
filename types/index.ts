@@ -43,6 +43,7 @@ export interface Enhancement {
   id: string;
   name: string;
   description: string;
-  price: number;
-  priceType: 'daily' | 'one-time';
+  price: number | string;
+  priceType: string;
+  icon?: string;
 }
