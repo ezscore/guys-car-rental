@@ -202,6 +202,7 @@ export const enhancements: Enhancement[] = [
     description: 'Never get lost with our GPS system',
     price: 10,
     priceType: 'daily',
+    icon: 'navigation',
   },
   {
     id: 'child-seat',
@@ -209,6 +210,7 @@ export const enhancements: Enhancement[] = [
     description: 'Keep your little ones safe',
     price: 5,
     priceType: 'daily',
+    icon: 'child_care',
   },
   {
     id: 'additional-driver',
@@ -216,6 +218,7 @@ export const enhancements: Enhancement[] = [
     description: 'Add another authorized driver',
     price: 15,
     priceType: 'one-time',
+    icon: 'person_add',
   },
   {
     id: 'insurance-premium',
@@ -223,6 +226,7 @@ export const enhancements: Enhancement[] = [
     description: 'Full coverage with zero deductible',
     price: 20,
     priceType: 'daily',
+    icon: 'shield',
   },
   {
     id: 'wifi',
@@ -230,6 +234,7 @@ export const enhancements: Enhancement[] = [
     description: 'Stay connected on the go',
     price: 8,
     priceType: 'daily',
+    icon: 'wifi',
   },
 ];
 
