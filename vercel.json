@@ -1,0 +1,16 @@
+{
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "env": {
+    "HQRENTAL_API_REGION": "america",
+    "HQRENTAL_BRAND_ID": "1"
+  }
+}

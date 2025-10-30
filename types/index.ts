@@ -43,7 +43,7 @@ export interface Enhancement {
   id: string;
   name: string;
   description: string;
-  price: number | string;
+  price: number;
   priceType: string;
   icon?: string;
 }
