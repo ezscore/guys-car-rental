@@ -24,7 +24,7 @@ TEL2_HREF   = "+17587209983"
 EMAIL       = "info@guyscarrentals.com"
 BING_VERIFICATION = "94C55CE64030293EC46CAEDB2F5F68D0"
 INDEXNOW_KEY = "f8155fd4b3093ca6decdaa2b04200128"
-GSC_VERIFICATION_FILE = "googled54ffc17b6c60305.html"
+GSC_VERIFICATION = "kYy2DJRkiS7czJVndEAFCeiIThr3atP4RPjqWiAbfGY"
 
 # ---------------------------------------------------------------- content data
 # Rates and availability were re-verified in the public HQ Rentals booking flow
@@ -317,6 +317,7 @@ def layout(*, path, title, desc, h1, body, depth=0, active="", jsonld=None,
 <meta name="description" content="{esc(desc)}">
 <meta name="robots" content="{'index,follow' if indexable else 'noindex,follow'}">
 <meta name="msvalidate.01" content="{BING_VERIFICATION}">
+<meta name="google-site-verification" content="{GSC_VERIFICATION}">
 <link rel="canonical" href="{canon}">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(desc)}">
@@ -939,8 +940,6 @@ def main():
     # Public IndexNow proof file. This value proves control of the host but is
     # not a credential and is expected to be publicly reachable.
     write(f"{INDEXNOW_KEY}.txt", INDEXNOW_KEY)
-    write(GSC_VERIFICATION_FILE,
-          f"google-site-verification: {GSC_VERIFICATION_FILE}")
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u,p in urls:
