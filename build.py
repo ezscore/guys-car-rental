@@ -905,6 +905,12 @@ def main():
     urls = []
     def emit(rel, content, prio="0.7"):
         write(rel, content)
+        if rel == "index.html":
+            write("home.html", content)
+        # Vercel's clean URL routing resolves flat .html assets. Keep directory
+        # indexes as well so the same build works in a plain local web server.
+        if rel.endswith("/index.html"):
+            write(rel[:-len("/index.html")] + ".html", content)
         page = rel[:-len("index.html")] if rel.endswith("index.html") else rel
         urls.append((f"{SITE}/{page}", prio))
 

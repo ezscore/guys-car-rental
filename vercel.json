@@ -3,6 +3,12 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/home"
+    }
+  ],
   "redirects": [
     {
       "source": "/index.php",
