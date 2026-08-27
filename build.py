@@ -749,6 +749,11 @@ def areas_page():
   <div class="callout"><p>Choose the closest official counter for the fastest confirmed pickup.
   If your hotel, villa or community is elsewhere, select a custom location in the booking flow
   and enter the exact address.</p></div>
+  <div class="prose"><h2>Popular Saint Lucia rental destinations</h2>
+  <p>Guy's serves visitors staying in Soufriere, Rodney Bay, Gros Islet, Castries,
+  Vieux Fort, Marigot Bay, Cap Estate, Reduit, Laborie and communities across the island.
+  Pickup and return outside an official counter remain subject to confirmation and the fee
+  shown in your quote.</p></div>
   <div class="area-grid">{districts}</div>
   <div class="coverage-cta">
     <div><h2>Start with your arrival point</h2><p>Visitors arriving by air or cruise can collect at the terminal, then drive to every district on the island.</p></div>
