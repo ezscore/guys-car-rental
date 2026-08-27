@@ -761,8 +761,8 @@ def areas_page():
          "areaServed":[{"@type":"AdministrativeArea","name":name} for name,_ in AREAS],
          "url":f"{SITE}/areas/"}]}
     return layout(path="areas/",
-        title="Car Rental Across Saint Lucia | All 10 Districts | Guy's",
-        desc="Car rental coverage across all 10 Saint Lucia districts, with counters at UVF, SLU and Castries Cruise Terminal plus custom pickup and return requests.",
+        title="Car Rental in Soufriere, Rodney Bay & Vieux Fort | Guy's",
+        desc="Rent a car across Saint Lucia, including Soufriere, Rodney Bay, Gros Islet, Castries, Vieux Fort, Marigot Bay and all 10 districts.",
         h1="Car rental coverage across Saint Lucia", body=body, depth=1, active="areas", jsonld=ld)
 
 def reservation_help_page():
