@@ -22,6 +22,8 @@ TEL_HREF    = "+17584517885"
 TEL2_DISPLAY= "+1 758 720 9983"
 TEL2_HREF   = "+17587209983"
 EMAIL       = "info@guyscarrentals.com"
+BING_VERIFICATION = "94C55CE64030293EC46CAEDB2F5F68D0"
+INDEXNOW_KEY = "f8155fd4b3093ca6decdaa2b04200128"
 
 # ---------------------------------------------------------------- content data
 # Rates and availability were re-verified in the public HQ Rentals booking flow
@@ -313,6 +315,7 @@ def layout(*, path, title, desc, h1, body, depth=0, active="", jsonld=None,
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">
 <meta name="robots" content="{'index,follow' if indexable else 'noindex,follow'}">
+<meta name="msvalidate.01" content="{BING_VERIFICATION}">
 <link rel="canonical" href="{canon}">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(desc)}">
@@ -932,6 +935,9 @@ def main():
     shutil.copytree(os.path.join(ROOT, "assets"), os.path.join(OUT, "assets"))
 
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n")
+    # Public IndexNow proof file. This value proves control of the host but is
+    # not a credential and is expected to be publicly reachable.
+    write(f"{INDEXNOW_KEY}.txt", INDEXNOW_KEY)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u,p in urls:
