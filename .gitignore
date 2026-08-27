@@ -3,3 +3,5 @@ __pycache__/
 *.bak-*
 .DS_Store
 public/
+.vercel
+.env*
