@@ -1,16 +1,38 @@
 {
-  "buildCommand": "next build",
-  "devCommand": "next dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"],
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 60
+  "buildCommand": "python3 build.py",
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "trailingSlash": true,
+  "redirects": [
+    {
+      "source": "/index.php",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/aboutus.php",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/fleet.php",
+      "destination": "/fleet/",
+      "permanent": true
+    },
+    {
+      "source": "/reservations.php",
+      "destination": "/fleet/",
+      "permanent": true
+    },
+    {
+      "source": "/options.php",
+      "destination": "/rates/",
+      "permanent": true
+    },
+    {
+      "source": "/contact.php",
+      "destination": "/contact/",
+      "permanent": true
     }
-  },
-  "env": {
-    "HQRENTAL_API_REGION": "america",
-    "HQRENTAL_BRAND_ID": "1"
-  }
+  ]
 }
